@@ -3,10 +3,10 @@ import argparse, threading as thre
 from queue import Queue
 
 # colours 
-
-PURPLE = cr.Fore.PURPLE
+cr.init()
+YELLOW = cr.Fore.YELLOW
 GREEN  = cr.Fore.GREEN 
-RESET  = cr.Fore.LIGHTBLACK_EX
+RESET  = cr.Fore.RESET
 
 # threads number
 
@@ -21,20 +21,22 @@ print_lock = thre.Lock()
 
 # to get if any port is open
 
-def is_port_open(host,port) :
+def is_port_open(port) :
 
     try :
         
         s= socket.socket()
         s.connect((host,port))
         #for faster scan
-        s.settimeout(0.2)
+        #s.settimeout(0.2)
     
     except:
-        print(f"{PURPLE}[+] {host}:{port} is closed    {RESET}", end="\r")
+        with print_lock :
+            print(f"{YELLOW}[+] {host}:{port} is closed    {RESET}", end="\r")
     
     else :
-        print(f"{GREEN}[+] {host}:{port} is open    {RESET}")
+        with print_lock :
+            print(f"{GREEN}[+] {host}:{port} is open    {RESET}")
     
     finally :
         s.close()
@@ -78,9 +80,21 @@ def main(host,ports) :
     # wait for threads ( port scanners to finish )
     q.join()
 
-    if __name__=="__main__" :
+if __name__=="__main__" :
         # parsing some parameters
-        print("hello")
+        
+        parser = argparse.ArgumentParser(description="Simple port scanner")
+        parser.add_argument("host", help ="host to scan ")
+        parser.add_argument("--ports","-p",dest= "port_range", default = "1-65535",help="port range to scan, default is 1 to 65535")
+        args = parser.parse_args()
+        host,port_range= args.host, args.port_range
+
+        start_port, end_port = port_range.split("-")
+        start_port, end_port =int(start_port),int(end_port)
+        
+        ports= [p for p in range(start_port,end_port)]
+
+        main(host,ports)
 
 
 
